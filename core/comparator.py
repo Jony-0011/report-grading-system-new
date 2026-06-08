@@ -34,11 +34,18 @@ def compare_keywords(ref_text, student_text, keywords):
         ref_count = len(re.findall(re.escape(keyword), ref_text, re.IGNORECASE))
         student_count = len(re.findall(re.escape(keyword), student_text, re.IGNORECASE))
         
+        if ref_count == 0:
+            matched = True
+        elif student_count > 0:
+            matched = True
+        else:
+            matched = False
+        
         results.append({
             'keyword': keyword,
             'ref_count': ref_count,
             'student_count': student_count,
-            'matched': student_count >= ref_count if ref_count > 0 else True
+            'matched': matched
         })
     
     matched_count = sum(1 for r in results if r['matched'])
