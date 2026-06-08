@@ -136,11 +136,19 @@ def show_login_page():
             elif users[phone] != encrypt_password(password):
                 st.error("密码错误，请重试")
             else:
-                # 登录成功
+                # 登录成功，初始化必要的会话状态
                 st.session_state['logged_in'] = True
                 st.session_state['current_user'] = phone
+                st.session_state['ref_answer'] = None
+                st.session_state['ref_data'] = None
+                st.session_state['student_reports'] = []
+                st.session_state['grading_results'] = []
                 st.success("登录成功！正在进入系统...")
-                st.experimental_rerun()
+                # 使用 rerun 确保页面正确跳转
+                try:
+                    st.rerun()
+                except:
+                    st.experimental_rerun()
         
         st.markdown("</div>", unsafe_allow_html=True)
     
@@ -270,9 +278,19 @@ def show_main_system():
         
         # 退出登录按钮
         if st.button("🚪 退出登录"):
+            # 清理所有会话状态
             st.session_state['logged_in'] = False
             st.session_state['current_user'] = None
-            st.experimental_rerun()
+            st.session_state['ref_answer'] = None
+            st.session_state['ref_data'] = None
+            st.session_state['student_reports'] = []
+            st.session_state['grading_results'] = []
+            st.session_state['selected_report'] = None
+            # 使用 rerun 确保页面正确跳转
+            try:
+                st.rerun()
+            except:
+                st.experimental_rerun()
         
         st.markdown("---")
         
