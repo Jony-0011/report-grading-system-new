@@ -54,9 +54,9 @@ def export_to_html(grading_results):
     <div class="container">
         <div class="header">
             <h1>实训报告智能批改系统</h1>
-            <p>共批改 {total_count} 份报告</p>
+            <p>共批改 __TOTAL_COUNT__ 份报告</p>
         </div>
-        {report_cards}
+        __REPORT_CARDS__
         <div class="footer">
             <p>© 2024 实训报告智能批改系统 | 离线版</p>
         </div>
@@ -84,48 +84,50 @@ def export_to_html(grading_results):
                 'images': '图片数量',
                 'format': '格式规范'
             }
+            reason_text = html.escape(score_info['reason']).replace('{', '{{').replace('}', '}}')
             scores_html += """
 <div class="score-item">
-    <h4>{category_name}</h4>
-    <span class="score-value">{score}</span>
-    <span class="score-max">/{max_score}</span>
-    <div class="reason">{reason}</div>
-</div>""".format(
-                category_name=category_names.get(category, category),
-                score=score_info['score'],
-                max_score=score_info.get('max_score', 100),
-                reason=html.escape(score_info['reason'])
+    <h4>%s</h4>
+    <span class="score-value">%s</span>
+    <span class="score-max">/%s</span>
+    <div class="reason">%s</div>
+</div>""" % (
+                category_names.get(category, category),
+                score_info['score'],
+                score_info.get('max_score', 100),
+                reason_text
             )
         
-        escaped_comment = html.escape(result['comment']).replace('\n', '<br>')
+        escaped_comment = html.escape(result['comment']).replace('\n', '<br>').replace('{', '{{').replace('}', '}}')
         card = """
 <div class="report-card">
     <div class="card-header">
-        <span class="file-name">{file_name}</span>
+        <span class="file-name">%s</span>
         <div>
-            <span class="score-badge {grade_class}">{total_score}</span>
-            <span class="grade">{grade}</span>
+            <span class="score-badge %s">%s</span>
+            <span class="grade">%s</span>
         </div>
     </div>
     <div class="scores-grid">
-        {scores_html}
+        %s
     </div>
     <div class="comment-section">
         <h3>教师评语</h3>
-        <div class="comment-text">{comment}</div>
+        <div class="comment-text">%s</div>
     </div>
-</div>""".format(
-            file_name=html.escape(result['file_name']),
-            grade_class=grade_class,
-            total_score=result['total_score'],
-            grade=result['grade'],
-            scores_html=scores_html,
-            comment=escaped_comment
+</div>""" % (
+            html.escape(result['file_name']),
+            grade_class,
+            result['total_score'],
+            result['grade'],
+            scores_html,
+            escaped_comment
         )
         
         report_cards.append(card)
     
-    return html_content.format(
-        total_count=len(grading_results),
-        report_cards='\n'.join(report_cards)
+    return html_content.replace(
+        '__TOTAL_COUNT__', str(len(grading_results))
+    ).replace(
+        '__REPORT_CARDS__', '\n'.join(report_cards)
     )
