@@ -50,7 +50,7 @@ def show_login_page():
     """显示登录注册页面"""
     st.set_page_config(
         page_title="实训报告智能批改系统 - 登录",
-        page_icon="🔐",
+        page_icon="📝",
         layout="centered"
     )
     
@@ -104,7 +104,6 @@ def show_login_page():
     # 主标题区域
     st.markdown("""
     <div style="text-align: center; margin-bottom: 20px;">
-        <div style="font-size: 48px; margin-bottom: 15px;">📝</div>
         <h1 class="main-title">实训报告智能批改系统</h1>
         <p class="sub-title">登录系统开始批改工作</p>
     </div>
@@ -114,13 +113,13 @@ def show_login_page():
     st.markdown('<div class="login-box">', unsafe_allow_html=True)
     
     # 创建选项卡
-    tab1, tab2 = st.tabs(["🔐 用户登录", "📱 手机号注册"])
+    tab1, tab2 = st.tabs(["用户登录", "手机号注册"])
     
     with tab1:
         st.markdown("<div class='tab-content'>", unsafe_allow_html=True)
         
-        phone = st.text_input("📱 手机号", placeholder="请输入您的手机号", key="login_phone")
-        password = st.text_input("🔑 密码", placeholder="请输入密码", type="password", key="login_pwd")
+        phone = st.text_input("手机号", placeholder="请输入您的手机号", key="login_phone")
+        password = st.text_input("密码", placeholder="请输入密码", type="password", key="login_pwd")
         
         if st.button("登 录", key="login_btn"):
             users = load_users()
@@ -155,9 +154,9 @@ def show_login_page():
     with tab2:
         st.markdown("<div class='tab-content'>", unsafe_allow_html=True)
         
-        phone = st.text_input("📱 手机号", placeholder="请输入您的手机号", key="reg_phone")
-        password = st.text_input("🔑 密码", placeholder="请设置密码（6-16位）", type="password", key="reg_pwd")
-        confirm_pwd = st.text_input("🔑 确认密码", placeholder="请再次输入密码", type="password", key="reg_confirm_pwd")
+        phone = st.text_input("手机号", placeholder="请输入您的手机号", key="reg_phone")
+        password = st.text_input("密码", placeholder="请设置密码（6-16位）", type="password", key="reg_pwd")
+        confirm_pwd = st.text_input("确认密码", placeholder="请再次输入密码", type="password", key="reg_confirm_pwd")
         
         if st.button("注 册", key="reg_btn"):
             users = load_users()
@@ -187,7 +186,7 @@ def show_login_page():
     # 底部提示
     st.markdown("""
     <div style="text-align: center; margin-top: 20px; color: #999; font-size: 14px;">
-        <p>💡 提示：首次使用请先注册账号</p>
+        <p>提示：首次使用请先注册账号</p>
     </div>
     """, unsafe_allow_html=True)
 
@@ -277,7 +276,7 @@ def show_main_system():
         st.markdown(f"**当前用户:** {st.session_state['current_user']}")
         
         # 退出登录按钮
-        if st.button("🚪 退出登录"):
+        if st.button("退出登录"):
             # 清理所有会话状态
             st.session_state['logged_in'] = False
             st.session_state['current_user'] = None
@@ -340,7 +339,7 @@ def show_main_system():
             st.session_state.selected_report = None
             st.success("已重置所有设置")
     
-    st.title("📝 实训报告智能批改系统")
+    st.title("实训报告智能批改系统")
     st.markdown("---")
     
     col1, col2 = st.columns([3, 1])
@@ -359,7 +358,7 @@ def show_main_system():
     
     with col2:
         st.header("开始批改")
-        if st.button("🚀 开始批改", use_container_width=True):
+        if st.button("开始批改", use_container_width=True):
             if not st.session_state.ref_data:
                 st.error("请先上传参考答案报告！")
             elif not st.session_state.student_reports:
@@ -468,7 +467,7 @@ def show_main_system():
             st.write(f"参考答案图片数: {ref_count}")
             st.write(f"学生报告图片数: {stu_count}")
             if stu_count >= ref_count:
-                st.success(f"图片数量充足 ✓")
+                st.success(f"图片数量充足")
             else:
                 st.warning(f"图片数量不足，建议补充 {ref_count - stu_count} 张图片")
         
@@ -481,7 +480,7 @@ def show_main_system():
         with col_export1:
             json_data = export_to_json([selected_result])
             st.download_button(
-                "📥 导出 JSON",
+                "导出 JSON",
                 data=json_data,
                 file_name=f"{selected_name}_批改结果.json",
                 mime="application/json",
@@ -491,7 +490,7 @@ def show_main_system():
         with col_export2:
             html_data = export_to_html([selected_result])
             st.download_button(
-                "📥 导出 HTML",
+                "导出 HTML",
                 data=html_data,
                 file_name=f"{selected_name}_批改结果.html",
                 mime="text/html",
@@ -505,7 +504,7 @@ def show_main_system():
             with col_batch1:
                 all_json = export_to_json(st.session_state.grading_results)
                 st.download_button(
-                    "📥 全部导出 JSON",
+                    "全部导出 JSON",
                     data=all_json,
                     file_name="所有报告批改结果.json",
                     mime="application/json",
@@ -515,14 +514,14 @@ def show_main_system():
             with col_batch2:
                 all_html = export_to_html(st.session_state.grading_results)
                 st.download_button(
-                    "📥 全部导出 HTML",
+                    "全部导出 HTML",
                     data=all_html,
                     file_name="所有报告批改结果.html",
                     mime="text/html",
                     use_container_width=True
                 )
     else:
-        st.info("请上传学生报告并点击「开始批改」按钮")
+        st.info("请上传学生报告并点击开始批改按钮")
 
 # ==================== 主入口函数 ====================
 def main():
