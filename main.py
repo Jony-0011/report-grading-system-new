@@ -57,17 +57,9 @@ def show_login_page():
     # 自定义样式
     st.markdown("""
     <style>
-    .login-box {
-        max-width: 420px;
-        margin: 0 auto;
-        padding: 30px;
-        background: white;
-        border-radius: 16px;
-        box-shadow: 0 8px 32px rgba(0,0,0,0.1);
-    }
     .main-title {
         color: #1e3a5f;
-        font-size: 24px;
+        font-size: 28px;
         font-weight: bold;
         text-align: center;
         margin-bottom: 8px;
@@ -92,11 +84,8 @@ def show_login_page():
     }
     .tab-content {
         padding: 10px 0;
-    }
-    .input-label {
-        font-weight: 500;
-        color: #333;
-        margin-bottom: 5px;
+        max-width: 420px;
+        margin: 0 auto;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -108,9 +97,6 @@ def show_login_page():
         <p class="sub-title">登录系统开始批改工作</p>
     </div>
     """, unsafe_allow_html=True)
-    
-    # 登录框
-    st.markdown('<div class="login-box">', unsafe_allow_html=True)
     
     # 创建选项卡
     tab1, tab2 = st.tabs(["用户登录", "手机号注册"])
@@ -180,8 +166,6 @@ def show_login_page():
                 st.success("注册成功！请登录")
         
         st.markdown("</div>", unsafe_allow_html=True)
-    
-    st.markdown('</div>', unsafe_allow_html=True)
     
     # 底部提示
     st.markdown("""
