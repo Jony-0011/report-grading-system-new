@@ -1,6 +1,9 @@
 import streamlit as st
 import os
 import tempfile
+import json
+import hashlib
+import re
 
 from core.parser import parse_document
 from core.comparator import (
@@ -16,6 +19,171 @@ from core.scorer import (
 from utils.file_handler import process_uploaded_files, get_file_type
 from utils.exporter import export_to_json, export_to_html
 
+# ==================== 用户认证相关函数 ====================
+USERS_FILE = "users.json"
+
+def load_users():
+    """加载用户数据"""
+    if os.path.exists(USERS_FILE):
+        try:
+            with open(USERS_FILE, 'r', encoding='utf-8') as f:
+                return json.load(f)
+        except:
+            return {}
+    return {}
+
+def save_users(users):
+    """保存用户数据"""
+    with open(USERS_FILE, 'w', encoding='utf-8') as f:
+        json.dump(users, f, ensure_ascii=False, indent=2)
+
+def encrypt_password(password):
+    """简单的密码加密（MD5）"""
+    return hashlib.md5(password.encode()).hexdigest()
+
+def validate_phone(phone):
+    """校验手机号格式（11位数字，以1开头）"""
+    pattern = r'^1[3-9]\d{9}$'
+    return re.match(pattern, phone) is not None
+
+def show_login_page():
+    """显示登录注册页面"""
+    st.set_page_config(
+        page_title="实训报告智能批改系统 - 登录",
+        page_icon="🔐",
+        layout="centered"
+    )
+    
+    # 自定义样式
+    st.markdown("""
+    <style>
+    .login-box {
+        max-width: 420px;
+        margin: 0 auto;
+        padding: 30px;
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+    }
+    .main-title {
+        color: #1e3a5f;
+        font-size: 24px;
+        font-weight: bold;
+        text-align: center;
+        margin-bottom: 8px;
+    }
+    .sub-title {
+        color: #666;
+        text-align: center;
+        margin-bottom: 30px;
+    }
+    .stButton>button {
+        width: 100%;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 8px;
+        padding: 12px;
+        font-size: 16px;
+        border: none;
+        margin-top: 10px;
+    }
+    .stButton>button:hover {
+        opacity: 0.9;
+    }
+    .tab-content {
+        padding: 10px 0;
+    }
+    .input-label {
+        font-weight: 500;
+        color: #333;
+        margin-bottom: 5px;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+    
+    # 主标题区域
+    st.markdown("""
+    <div style="text-align: center; margin-bottom: 20px;">
+        <div style="font-size: 48px; margin-bottom: 15px;">📝</div>
+        <h1 class="main-title">实训报告智能批改系统</h1>
+        <p class="sub-title">登录系统开始批改工作</p>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # 登录框
+    st.markdown('<div class="login-box">', unsafe_allow_html=True)
+    
+    # 创建选项卡
+    tab1, tab2 = st.tabs(["🔐 用户登录", "📱 手机号注册"])
+    
+    with tab1:
+        st.markdown("<div class='tab-content'>", unsafe_allow_html=True)
+        
+        phone = st.text_input("📱 手机号", placeholder="请输入您的手机号", key="login_phone")
+        password = st.text_input("🔑 密码", placeholder="请输入密码", type="password", key="login_pwd")
+        
+        if st.button("登 录", key="login_btn"):
+            users = load_users()
+            
+            if not phone:
+                st.error("请输入手机号")
+            elif not validate_phone(phone):
+                st.error("请输入正确的手机号格式（11位数字）")
+            elif not password:
+                st.error("请输入密码")
+            elif phone not in users:
+                st.error("账号不存在，请先注册")
+            elif users[phone] != encrypt_password(password):
+                st.error("密码错误，请重试")
+            else:
+                # 登录成功
+                st.session_state['logged_in'] = True
+                st.session_state['current_user'] = phone
+                st.success("登录成功！正在进入系统...")
+                st.experimental_rerun()
+        
+        st.markdown("</div>", unsafe_allow_html=True)
+    
+    with tab2:
+        st.markdown("<div class='tab-content'>", unsafe_allow_html=True)
+        
+        phone = st.text_input("📱 手机号", placeholder="请输入您的手机号", key="reg_phone")
+        password = st.text_input("🔑 密码", placeholder="请设置密码（6-16位）", type="password", key="reg_pwd")
+        confirm_pwd = st.text_input("🔑 确认密码", placeholder="请再次输入密码", type="password", key="reg_confirm_pwd")
+        
+        if st.button("注 册", key="reg_btn"):
+            users = load_users()
+            
+            if not phone:
+                st.error("请输入手机号")
+            elif not validate_phone(phone):
+                st.error("请输入正确的手机号格式（11位数字）")
+            elif phone in users:
+                st.error("该手机号已注册，请直接登录")
+            elif not password:
+                st.error("请设置密码")
+            elif len(password) < 6 or len(password) > 16:
+                st.error("密码长度需在6-16位之间")
+            elif password != confirm_pwd:
+                st.error("两次输入的密码不一致")
+            else:
+                # 注册成功
+                users[phone] = encrypt_password(password)
+                save_users(users)
+                st.success("注册成功！请登录")
+        
+        st.markdown("</div>", unsafe_allow_html=True)
+    
+    st.markdown('</div>', unsafe_allow_html=True)
+    
+    # 底部提示
+    st.markdown("""
+    <div style="text-align: center; margin-top: 20px; color: #999; font-size: 14px;">
+        <p>💡 提示：首次使用请先注册账号</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+# ==================== 原有系统相关函数 ====================
 def init_session_state():
     if 'ref_answer' not in st.session_state:
         st.session_state.ref_answer = None
@@ -84,7 +252,8 @@ def grade_report(student_data, ref_data, weights):
         'comparison_details': comparison_details
     }
 
-def main():
+def show_main_system():
+    """显示主系统页面"""
     init_session_state()
     
     st.set_page_config(
@@ -95,6 +264,17 @@ def main():
     
     with st.sidebar:
         st.header("系统设置")
+        
+        # 显示当前用户
+        st.markdown(f"**当前用户:** {st.session_state['current_user']}")
+        
+        # 退出登录按钮
+        if st.button("🚪 退出登录"):
+            st.session_state['logged_in'] = False
+            st.session_state['current_user'] = None
+            st.experimental_rerun()
+        
+        st.markdown("---")
         
         st.subheader("参考答案报告")
         ref_file = st.file_uploader("上传参考答案 (docx)", type=['docx'], key='ref_uploader')
@@ -220,6 +400,7 @@ def main():
             grade_color = {
                 '优秀': 'green',
                 '良好': 'blue',
+                '中等': 'orange',
                 '及格': 'orange',
                 '不及格': 'red'
             }[selected_result['grade']]
@@ -324,6 +505,19 @@ def main():
                 )
     else:
         st.info("请上传学生报告并点击「开始批改」按钮")
+
+# ==================== 主入口函数 ====================
+def main():
+    # 初始化登录状态
+    if 'logged_in' not in st.session_state:
+        st.session_state['logged_in'] = False
+    
+    if st.session_state['logged_in']:
+        # 已登录，显示主系统
+        show_main_system()
+    else:
+        # 未登录，显示登录页面
+        show_login_page()
 
 if __name__ == "__main__":
     main()
