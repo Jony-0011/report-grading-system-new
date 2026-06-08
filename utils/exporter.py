@@ -84,21 +84,27 @@ def export_to_html(grading_results):
                 'images': '图片数量',
                 'format': '格式规范'
             }
-            scores_html += f"""
+            scores_html += """
 <div class="score-item">
-    <h4>{category_names.get(category, category)}</h4>
-    <span class="score-value">{score_info['score']}</span>
-    <span class="score-max">/{score_info.get('max_score', 100)}</span>
-    <div class="reason">{html.escape(score_info['reason'])}</div>
-</div>"""
+    <h4>{category_name}</h4>
+    <span class="score-value">{score}</span>
+    <span class="score-max">/{max_score}</span>
+    <div class="reason">{reason}</div>
+</div>""".format(
+                category_name=category_names.get(category, category),
+                score=score_info['score'],
+                max_score=score_info.get('max_score', 100),
+                reason=html.escape(score_info['reason'])
+            )
         
-        card = f"""
+        escaped_comment = html.escape(result['comment']).replace('\n', '<br>')
+        card = """
 <div class="report-card">
     <div class="card-header">
-        <span class="file-name">{html.escape(result['file_name'])}</span>
+        <span class="file-name">{file_name}</span>
         <div>
-            <span class="score-badge {grade_class}">{result['total_score']}</span>
-            <span class="grade">{result['grade']}</span>
+            <span class="score-badge {grade_class}">{total_score}</span>
+            <span class="grade">{grade}</span>
         </div>
     </div>
     <div class="scores-grid">
@@ -106,9 +112,16 @@ def export_to_html(grading_results):
     </div>
     <div class="comment-section">
         <h3>教师评语</h3>
-        <div class="comment-text">{html.escape(result['comment']).replace('\\n', '<br>')}</div>
+        <div class="comment-text">{comment}</div>
     </div>
-</div>"""
+</div>""".format(
+            file_name=html.escape(result['file_name']),
+            grade_class=grade_class,
+            total_score=result['total_score'],
+            grade=result['grade'],
+            scores_html=scores_html,
+            comment=escaped_comment
+        )
         
         report_cards.append(card)
     
