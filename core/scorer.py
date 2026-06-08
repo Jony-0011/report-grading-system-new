@@ -3,20 +3,27 @@ def calculate_structure_score(heading_result, max_score=10):
         return {'score': max_score, 'reason': '参考答案无标题信息'}
     
     similarity = heading_result['similarity']
+    matched_count = heading_result['matched']
     missing = heading_result['missing']
     
-    if similarity >= 0.9:
+    if similarity >= 0.8:
         score = max_score
         reason = '章节结构完整，与参考答案一致'
-    elif similarity >= 0.7:
-        score = int(max_score * 0.8)
-        reason = f'章节基本完整，缺少少量标题: {", ".join(missing[:3])}' if missing else '章节基本完整'
-    elif similarity >= 0.5:
+    elif similarity >= 0.6:
+        score = int(max_score * 0.85)
+        reason = f'章节基本完整，缺少少量标题: {\", \".join(missing[:3])}' if missing else '章节基本完整'
+    elif similarity >= 0.4:
+        score = int(max_score * 0.7)
+        reason = f'章节结构较完整，缺少部分标题: {\", \".join(missing[:5])}'
+    elif similarity >= 0.2:
         score = int(max_score * 0.5)
-        reason = f'章节结构不完整，缺少部分标题: {", ".join(missing[:5])}'
+        reason = f'章节结构基本完整，包含{matched_count}个章节'
+    elif matched_count >= 2:
+        score = int(max_score * 0.4)
+        reason = f'章节结构较简单，包含{matched_count}个章节'
     else:
         score = int(max_score * 0.2)
-        reason = f'章节结构严重缺失，缺少多个关键标题: {", ".join(missing[:5])}'
+        reason = '章节结构缺失较多'
     
     return {'score': score, 'reason': reason}
 
@@ -25,48 +32,55 @@ def calculate_key_steps_score(keyword_result, max_score=30):
         return {'score': max_score, 'reason': '无关键词配置'}
     
     accuracy = keyword_result['accuracy']
+    matched = [r['keyword'] for r in keyword_result['details'] if r['matched']]
     missed = [r['keyword'] for r in keyword_result['details'] if not r['matched']]
     
-    if accuracy >= 0.9:
+    if accuracy >= 0.7:
         score = max_score
-        reason = '关键步骤完整，所有关键词均已涵盖'
-    elif accuracy >= 0.7:
-        score = int(max_score * 0.8)
-        reason = f'关键步骤基本完整，少量关键词缺失: {", ".join(missed[:3])}'
+        reason = f'关键步骤完整，涵盖关键词: {\", \".join(matched)}'
     elif accuracy >= 0.5:
+        score = int(max_score * 0.85)
+        reason = f'关键步骤较完整，涵盖关键词: {\", \".join(matched)}'
+    elif accuracy >= 0.3:
+        score = int(max_score * 0.7)
+        reason = f'关键步骤基本完整，涵盖关键词: {\", \".join(matched)}'
+    elif accuracy >= 0.1:
         score = int(max_score * 0.5)
-        reason = f'关键步骤不完整，部分关键词缺失: {", ".join(missed[:5])}'
+        reason = f'关键步骤部分完整，涵盖关键词: {\", \".join(matched)}'
     else:
         score = int(max_score * 0.2)
-        reason = f'关键步骤严重缺失，多个关键词未涵盖: {", ".join(missed[:5])}'
+        reason = '关键步骤缺失较多'
     
     return {'score': score, 'reason': reason}
 
 def calculate_result_score(text_result, max_score=25):
     similarity = text_result['similarity']
     
-    if similarity >= 0.8:
+    if similarity >= 0.5:
         score = max_score
         reason = '内容匹配度高，与参考答案一致性好'
-    elif similarity >= 0.6:
+    elif similarity >= 0.35:
         score = int(max_score * 0.8)
         reason = '内容匹配度较好，大部分内容一致'
-    elif similarity >= 0.4:
-        score = int(max_score * 0.5)
+    elif similarity >= 0.2:
+        score = int(max_score * 0.6)
         reason = '内容匹配度一般，部分内容需要完善'
+    elif similarity >= 0.1:
+        score = int(max_score * 0.4)
+        reason = '内容匹配度较低，需参考参考答案补充'
     else:
         score = int(max_score * 0.2)
-        reason = '内容匹配度较低，需参考参考答案补充'
+        reason = '内容匹配度低，建议重新参考参考答案'
     
     return {'score': score, 'reason': reason}
 
 def calculate_reflection_score(reflection_result, max_score=20):
     if reflection_result['has_reflection']:
         score = int(max_score * (0.7 + reflection_result['score'] * 0.3))
-        keywords = ", ".join(reflection_result['found_keywords'])
+        keywords = \", \".join(reflection_result['found_keywords'])
         reason = f'包含反思内容，提及关键词: {keywords}'
     else:
-        score = int(max_score * 0.3)
+        score = int(max_score * 0.4)
         reason = '缺少反思总结部分，建议增加实训体会和改进方向'
     
     return {'score': min(score, max_score), 'reason': reason}
@@ -79,16 +93,16 @@ def calculate_images_score(image_result, max_score=10):
     
     if ratio >= 1.0:
         score = max_score
-        reason = f'图片数量充足 ({image_result["student_count"]}/{image_result["ref_count"]})'
+        reason = f'图片数量充足 ({image_result[\"student_count\"]}/{image_result[\"ref_count\"]})'
     elif ratio >= 0.8:
         score = int(max_score * 0.8)
-        reason = f'图片数量略少 ({image_result["student_count"]}/{image_result["ref_count"]})'
+        reason = f'图片数量略少 ({image_result[\"student_count\"]}/{image_result[\"ref_count\"]})'
     elif ratio >= 0.5:
-        score = int(max_score * 0.5)
-        reason = f'图片数量不足 ({image_result["student_count"]}/{image_result["ref_count"]})'
+        score = int(max_score * 0.6)
+        reason = f'图片数量不足 ({image_result[\"student_count\"]}/{image_result[\"ref_count\"]})'
     else:
-        score = int(max_score * 0.2)
-        reason = f'图片数量严重不足 ({image_result["student_count"]}/{image_result["ref_count"]})'
+        score = int(max_score * 0.3)
+        reason = f'图片数量较少 ({image_result[\"student_count\"]}/{image_result[\"ref_count\"]})'
     
     return {'score': score, 'reason': reason}
 
@@ -97,8 +111,8 @@ def calculate_format_score(format_result, max_score=5):
         score = max_score
         reason = '格式规范，排版良好'
     else:
-        score = int(max_score * 0.5)
-        reason = '格式不够规范，建议检查排版'
+        score = int(max_score * 0.7)
+        reason = '格式基本规范'
     
     return {'score': score, 'reason': reason}
 
@@ -110,6 +124,8 @@ def generate_comment(scores, comparison_details):
         comments.append('本报告完成出色，各方面表现优秀。')
     elif total_score >= 80:
         comments.append('本报告完成良好，整体质量较高。')
+    elif total_score >= 70:
+        comments.append('本报告完成较好，继续努力。')
     elif total_score >= 60:
         comments.append('本报告基本合格，存在一些需要改进的地方。')
     else:
@@ -129,7 +145,7 @@ def generate_comment(scores, comparison_details):
     
     if comparison_details.get('heading_result') and comparison_details['heading_result']['missing']:
         missing = comparison_details['heading_result']['missing'][:3]
-        comments.append(f'建议补充以下章节: {", ".join(missing)}')
+        comments.append(f'建议补充以下章节: {\", \".join(missing)}')
     
     if comparison_details.get('reflection_result') and not comparison_details['reflection_result']['has_reflection']:
         comments.append('建议增加实训总结与反思部分，包括收获体会和改进方向。')
@@ -148,6 +164,8 @@ def get_grade(total_score):
         return '优秀'
     elif total_score >= 80:
         return '良好'
+    elif total_score >= 70:
+        return '中等'
     elif total_score >= 60:
         return '及格'
     else:
