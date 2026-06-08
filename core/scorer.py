@@ -4,26 +4,30 @@ def calculate_structure_score(heading_result, max_score=10):
     
     similarity = heading_result['similarity']
     matched_count = heading_result['matched']
-    missing = heading_result['missing']
+    total_ref = heading_result['total_ref']
+    student_headings_count = len(heading_result.get('extra', [])) + matched_count
     
     if similarity >= 0.8:
         score = max_score
         reason = '章节结构完整，与参考答案一致'
     elif similarity >= 0.6:
         score = int(max_score * 0.85)
-        reason = f'章节基本完整，缺少少量标题: {\", \".join(missing[:3])}' if missing else '章节基本完整'
+        reason = '章节基本完整'
     elif similarity >= 0.4:
         score = int(max_score * 0.7)
-        reason = f'章节结构较完整，缺少部分标题: {\", \".join(missing[:5])}'
-    elif similarity >= 0.2:
+        reason = '章节结构较完整'
+    elif student_headings_count >= 3:
+        score = int(max_score * 0.6)
+        reason = f'结构合理，包含{student_headings_count}个章节'
+    elif student_headings_count >= 2:
         score = int(max_score * 0.5)
-        reason = f'章节结构基本完整，包含{matched_count}个章节'
-    elif matched_count >= 2:
+        reason = f'包含{student_headings_count}个基本章节'
+    elif student_headings_count >= 1:
         score = int(max_score * 0.4)
-        reason = f'章节结构较简单，包含{matched_count}个章节'
+        reason = '有基本章节结构'
     else:
         score = int(max_score * 0.2)
-        reason = '章节结构缺失较多'
+        reason = '章节结构较简单'
     
     return {'score': score, 'reason': reason}
 
@@ -55,33 +59,50 @@ def calculate_key_steps_score(keyword_result, max_score=30):
 
 def calculate_result_score(text_result, max_score=25):
     similarity = text_result['similarity']
+    common_words = text_result['common_words']
+    total_ref = text_result['total_ref_words']
+    
+    if total_ref == 0:
+        return {'score': max_score, 'reason': '参考答案无文本内容'}
     
     if similarity >= 0.5:
         score = max_score
         reason = '内容匹配度高，与参考答案一致性好'
-    elif similarity >= 0.35:
+    elif similarity >= 0.3:
         score = int(max_score * 0.8)
-        reason = '内容匹配度较好，大部分内容一致'
-    elif similarity >= 0.2:
-        score = int(max_score * 0.6)
-        reason = '内容匹配度一般，部分内容需要完善'
-    elif similarity >= 0.1:
-        score = int(max_score * 0.4)
-        reason = '内容匹配度较低，需参考参考答案补充'
+        reason = '内容匹配度较好'
+    elif similarity >= 0.15:
+        score = int(max_score * 0.65)
+        reason = '内容基本匹配'
+    elif similarity >= 0.05:
+        score = int(max_score * 0.5)
+        reason = '内容有一定匹配度'
+    elif common_words >= 3:
+        score = int(max_score * 0.35)
+        reason = '内容较少，但有相关内容'
     else:
         score = int(max_score * 0.2)
-        reason = '内容匹配度低，建议重新参考参考答案'
+        reason = '内容较少，建议增加'
     
     return {'score': score, 'reason': reason}
 
 def calculate_reflection_score(reflection_result, max_score=20):
-    if reflection_result['has_reflection']:
-        score = int(max_score * (0.7 + reflection_result['score'] * 0.3))
+    found_count = len(reflection_result['found_keywords'])
+    
+    if found_count >= 4:
+        score = max_score
+        keywords = \", \".join(reflection_result['found_keywords'])
+        reason = f'反思内容丰富，提及关键词: {keywords}'
+    elif found_count >= 2:
+        score = int(max_score * 0.8)
         keywords = \", \".join(reflection_result['found_keywords'])
         reason = f'包含反思内容，提及关键词: {keywords}'
+    elif found_count == 1:
+        score = int(max_score * 0.55)
+        reason = f'有少量反思内容，提及关键词: {reflection_result["found_keywords"][0]}'
     else:
-        score = int(max_score * 0.4)
-        reason = '缺少反思总结部分，建议增加实训体会和改进方向'
+        score = int(max_score * 0.35)
+        reason = '建议增加实训总结与反思内容'
     
     return {'score': min(score, max_score), 'reason': reason}
 
@@ -111,7 +132,7 @@ def calculate_format_score(format_result, max_score=5):
         score = max_score
         reason = '格式规范，排版良好'
     else:
-        score = int(max_score * 0.7)
+        score = int(max_score * 0.8)
         reason = '格式基本规范'
     
     return {'score': score, 'reason': reason}
@@ -160,11 +181,11 @@ def generate_comment(scores, comparison_details):
     return '\n\n'.join(comments)
 
 def get_grade(total_score):
-    if total_score >= 90:
+    if total_score >= 84:
         return '优秀'
-    elif total_score >= 80:
+    elif total_score >= 75:
         return '良好'
-    elif total_score >= 70:
+    elif total_score >= 65:
         return '中等'
     elif total_score >= 60:
         return '及格'
@@ -173,3 +194,105 @@ def get_grade(total_score):
 
 def calculate_total_score(scores):
     return sum(s['score'] for s in scores.values())
+
+if __name__ == '__main__':
+    import unittest
+    
+    class TestGradingUnit(unittest.TestCase):
+        
+        def test_get_grade_boundary_cases(self):
+            self.assertEqual(get_grade(84), '优秀')
+            self.assertEqual(get_grade(83), '良好')
+            self.assertEqual(get_grade(75), '良好')
+            self.assertEqual(get_grade(74), '中等')
+            self.assertEqual(get_grade(65), '中等')
+            self.assertEqual(get_grade(64), '及格')
+            self.assertEqual(get_grade(60), '及格')
+            self.assertEqual(get_grade(59), '不及格')
+            
+        def test_get_grade_extreme_cases(self):
+            self.assertEqual(get_grade(100), '优秀')
+            self.assertEqual(get_grade(0), '不及格')
+            self.assertEqual(get_grade(50), '不及格')
+            self.assertEqual(get_grade(95), '优秀')
+            
+        def test_calculate_structure_score(self):
+            heading_result = {
+                'matched': 8,
+                'total_ref': 8,
+                'similarity': 1.0,
+                'missing': [],
+                'extra': []
+            }
+            result = calculate_structure_score(heading_result, 10)
+            self.assertEqual(result['score'], 10)
+            
+            heading_result_low = {
+                'matched': 1,
+                'total_ref': 8,
+                'similarity': 0.125,
+                'missing': ['a', 'b', 'c'],
+                'extra': []
+            }
+            result = calculate_structure_score(heading_result_low, 10)
+            self.assertEqual(result['score'], 4)
+            
+        def test_calculate_key_steps_score(self):
+            keyword_result = {
+                'details': [{'keyword': 'test', 'matched': True}],
+                'matched_count': 1,
+                'total_keywords': 1,
+                'accuracy': 1.0
+            }
+            result = calculate_key_steps_score(keyword_result, 30)
+            self.assertEqual(result['score'], 30)
+            
+        def test_calculate_result_score(self):
+            text_result = {
+                'common_words': 50,
+                'total_ref_words': 100,
+                'similarity': 0.5
+            }
+            result = calculate_result_score(text_result, 25)
+            self.assertEqual(result['score'], 25)
+            
+        def test_calculate_reflection_score(self):
+            reflection_result = {
+                'has_reflection': True,
+                'found_keywords': ['总结', '反思', '收获', '改进'],
+                'score': 0.33
+            }
+            result = calculate_reflection_score(reflection_result, 20)
+            self.assertEqual(result['score'], 20)
+            
+        def test_calculate_images_score(self):
+            image_result = {
+                'ref_count': 5,
+                'student_count': 5,
+                'ratio': 1.0
+            }
+            result = calculate_images_score(image_result, 10)
+            self.assertEqual(result['score'], 10)
+            
+        def test_calculate_format_score(self):
+            format_result = {'proper_format': True}
+            result = calculate_format_score(format_result, 5)
+            self.assertEqual(result['score'], 5)
+            
+            format_result_false = {'proper_format': False}
+            result = calculate_format_score(format_result_false, 5)
+            self.assertEqual(result['score'], 4)
+            
+        def test_calculate_total_score(self):
+            scores = {
+                'structure': {'score': 8},
+                'key_steps': {'score': 30},
+                'result': {'score': 20},
+                'reflection': {'score': 16},
+                'images': {'score': 10},
+                'format': {'score': 4}
+            }
+            total = calculate_total_score(scores)
+            self.assertEqual(total, 88)
+    
+    unittest.main(verbosity=2)
